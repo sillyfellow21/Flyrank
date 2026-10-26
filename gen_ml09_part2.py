@@ -1,0 +1,111 @@
+cells.append(md(
+    "## 1. Honest feature set (no leakage)\n",
+    "\n",
+    "These are trailing-90-day observable signals only. Nothing here is derived from the label, nothing is a product flag, and nothing overlaps the label window in a way that already knows the outcome.\n",
+    "\n",
+    "Honest features:\n",
+    "- `impressions_90d`, `clicks_90d`, `sessions_90d` — trailing traffic volume\n",
+    "- `days_since_last_update`, `content_age_days` — freshness / age\n",
+    "- `ctr`, `avg_position` — search-result presence\n",
+    "- `engagement_rate`, `scroll_rate` — on-page engagement\n",
+    "\n",
+    "Excluded (leakage): `trend_direction`, `trend_pct`, `is_declining` (label-derived); `health_score`, `is_underperformer`, `is_quick_win`, `needs_ctr_fix`, `needs_engagement_fix`, `needs_indexing`, `ai_opportunity`, `is_initial_refresh_candidate` (decision-derived product flags); `impressions_last_30d`, `clicks_last_30d` (overlap the label window).\n"
+))
+
+cells.append(code(
+    "HONEST_FEATURES = [",
+    "    \"impressions_90d\", \"clicks_90d\", \"sessions_90d\",",
+    "    \"days_since_last_update\", \"content_age_days\",",
+    "    \"ctr\", \"avg_position\", \"engagement_rate\", \"scroll_rate\",",
+    "]",
+    "",
+    "X_honest = df[HONEST_FEATURES].copy()",
+    "X_honest = X_honest.apply(pd.to_numeric, errors=\"coerce\").fillna(0)",
+    "y = df[\"is_declining_label\"].values",
+    "groups = df[\"client_id\"].values",
+    "",
+    "print(f\"Honest feature matrix: {X_honest.shape[0]} rows × {X_honest.shape[1]} features\")",
+    "print(\"Features:\", list(X_honest.columns))",
+    "",
+    "def precision_at_k(scores, labels, k):",
+    "    \"\"\"Precision@K: share of true decliners among the top-K ranked by score.\"\"\"",
+    "    order = np.argsort(-np.asarray(scores))",
+    "    top_k = order[:min(k, len(labels))]",
+    "    return float(np.asarray(labels)[top_k].mean())",
+    "",
+    "K_VALUES = [10, 20, 50, 100]",
+))
+
+cells.append(md(
+    "## 2. Leakage taxonomy — three ways answers sneak in\n",
+    "\n",
+    "We demonstrate each leakage flavor by adding the suspect feature and watching the score move. A jump toward 1.0 is the **confession**. Then we remove it and keep the honest number.\n",
+))
+
+cells.append(md(
+    "### 2a. Label-derived features (the label computed FROM a column)\n",
+    "\n",
+    "`trend_direction` / `trend_pct` / `is_declining` **are** the label. Feeding them in is the purest leakage: the model doesn't learn the world, it repeats the answer.\n",
+    "\n",
+    "**Test:** train once WITH the suspect, once WITHOUT — a collapse from ~1.0 to ~0.7 is the confession.\n",
+))
+
+cells.append(code(
+    "# --- 2a: label-derived leakage demo ---",
+    "X_leaky_label = X_honest.copy()",
+    "X_leaky_label[\"trend_direction_enc\"] = (df[\"trend_direction\"].str.lower().eq(\"down\")).astype(int)",
+    "X_leaky_label[\"trend_pct\"] = pd.to_numeric(df[\"trend_pct\"], errors=\"coerce\").fillna(0)",
+    "",
+    "gkf = GroupKFold(n_splits=5)",
+    "folds = list(gkf.split(X_honest, y, groups))",
+    "",
+    "def cv_precision_at_k(Xdf, yvec, groups_arr, model_name=\"random_forest\", k=50):",
+    "    oof = np.zeros(len(Xdf))",
+    "    rf = RandomForestClassifier(n_estimators=100, max_depth=10, min_samples_leaf=5, class_weight=\"balanced\", random_state=42, n_jobs=-1)",
+    "    lr = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000, class_weight=\"balanced\", random_state=42))",
+    "    model = rf if model_name == \"random_forest\" else lr",
+    "    for tr, te in folds:",
+    "        model.fit(Xdf.iloc[tr], yvec[tr])",
+    "        oof[te] = model.predict_proba(Xdf.iloc[te])[:, 1]",
+    "    return oof",
+    "",
+    "oof_honest = cv_precision_at_k(X_honest, y, groups, \"random_forest\", 50)",
+    "oof_leaky_label = cv_precision_at_k(X_leaky_label, y, groups, \"random_forest\", 50)",
+    "",
+    "p_honest = precision_at_k(oof_honest, y, 50)",
+    "p_leaky_label = precision_at_k(oof_leaky_label, y, 50)",
+    "",
+    "print(\"2a — Label-derived leakage (trend_direction + trend_pct as features):\")",
+    "print(f\"  Honest model precision@50 : {p_honest:.4f}\")",
+    "print(f\"  Leaky  model precision@50 : {p_leaky_label:.4f}\")",
+    "print(f\"  Collapse (leak→honest)    : {p_leaky_label - p_honest:+.4f}\")",
+    "print(f\"  Base rate                 : {base_rate:.4f}\")",
+))
+
+cells.append(md(
+    "### 2b. Decision-derived features (product flags / existing-system scores)\n",
+    "\n",
+    "`health_score`, `is_underperformer`, `is_quick_win`, `needs_ctr_fix`, `needs_engagement_fix`, `needs_indexing`, `ai_opportunity`, `is_initial_refresh_candidate` are scores and flags produced by an **existing system** — they encode a decision someone already made. Using them as features means learning the old rule, not the world: a circular result. They may serve as a **baseline to beat**, never as inputs.\n",
+))
+
+cells.append(code(
+    "# --- 2b: decision-derived (product flag) leakage demo ---",
+    "product_flags = [",
+    "    \"health_score\", \"is_underperformer\", \"is_quick_win\",",
+    "    \"needs_ctr_fix\", \"needs_engagement_fix\", \"needs_indexing\",",
+    "    \"ai_opportunity\", \"is_initial_refresh_candidate\",",
+    "]",
+    "X_leaky_flags = X_honest.copy()",
+    "for flag in product_flags:",
+    "    if flag in df.columns:",
+    "        X_leaky_flags[flag] = pd.to_numeric(df[flag], errors=\"coerce\").fillna(0)",
+    "",
+    "oof_leaky_flags = cv_precision_at_k(X_leaky_flags, y, groups, \"random_forest\", 50)",
+    "p_leaky_flags = precision_at_k(oof_leaky_flags, y, 50)",
+    "",
+    "print(\"2b — Decision-derived / product-flag leakage:\")",
+    "print(f\"  Honest model precision@50 : {p_honest:.4f}\")",
+    "print(f\"  Leaky  model precision@50 : {p_leaky_flags:.4f}\")",
+    "print(f\"  Inflation (leak→honest)   : {p_leaky_flags - p_honest:+.4f}\")",
+    "print(f\"  Base rate                 : {base_rate:.4f}\")",
+))

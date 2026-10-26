@@ -1,0 +1,61 @@
+{
+  "week": 2,
+  "assignment": "The model is just a rule you can read",
+  "summary": {
+    "n_pages": 30000,
+    "decline_rate": 0.5420666666666667,
+    "stale_days": 90,
+    "min_impressions": 100,
+    "flagged_pages": 8119,
+    "tree_depth": 2,
+    "tree_nodes": 7,
+    "leakage_found": false
+  },
+  "precision_at_k": {
+    "hand_rule": {
+      "20": 0.3,
+      "50": 0.34
+    },
+    "tree_depth_2": {
+      "20": 0.6,
+      "50": 0.64
+    },
+    "tree_depth_3": {
+      "20": 0.65,
+      "50": 0.66
+    }
+  },
+  "decision_tree_rules": "|--- impressions_90d <= 5.50\n|   |--- avg_position <= 0.60\n|   |   |--- class: 0\n|   |--- avg_position >  0.60\n|   |   |--- class: 0\n|--- impressions_90d >  5.50\n|   |--- content_age_days <= 312.50\n|   |   |--- class: 1\n|   |--- content_age_days >  312.50\n|   |   |--- class: 0\n",
+  "top_hand_rule_pages": [
+    {
+      "content_id": "content_5fe46e04994d",
+      "days_since_last_update": 104,
+      "impressions_90d": 517715,
+      "hand_rule_score": 517715
+    },
+    {
+      "content_id": "content_2dba2b1f9536",
+      "days_since_last_update": 104,
+      "impressions_90d": 443434,
+      "hand_rule_score": 443434
+    },
+    {
+      "content_id": "content_2c2606c5d176",
+      "days_since_last_update": 104,
+      "impressions_90d": 347399,
+      "hand_rule_score": 347399
+    },
+    {
+      "content_id": "content_cb112fce36be",
+      "days_since_last_update": 104,
+      "impressions_90d": 309910,
+      "hand_rule_score": 309910
+    },
+    {
+      "content_id": "content_9532f197bbc8",
+      "days_since_last_update": 104,
+      "impressions_90d": 309192,
+      "hand_rule_score": 309192
+    }
+  ]
+}

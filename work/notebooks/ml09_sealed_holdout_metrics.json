@@ -1,0 +1,23 @@
+{
+  "client": "client_02d20bbd7e",
+  "n_sealed": 38,
+  "sealed_base_rate": 0.42105263157894735,
+  "split": "sealed_holdout_grouped_by_client",
+  "model": "random_forest",
+  "features": [
+    "impressions_90d",
+    "clicks_90d",
+    "sessions_90d",
+    "days_since_last_update",
+    "content_age_days",
+    "ctr",
+    "avg_position",
+    "engagement_rate",
+    "scroll_rate"
+  ],
+  "note": "One entire client held out and never seen in training. Frame built by the sealed-holdout cell in ml09_hunt_leakage_validate.ipynb.",
+  "precision_at_10": 0.5,
+  "precision_at_20": 0.5,
+  "precision_at_50": 0.4211,
+  "precision_at_100": 0.4211
+}
