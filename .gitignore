@@ -1,0 +1,40 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*$py.class
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Environment
+venv/
+env/
+ENV/
+
+# Git embedded repos (not part of this repo)
+dowhy/
+monai/
+sktime/
+flyrank_clone/
+work/TokenTracker/
+work/deepchem/
+TokenTracker/

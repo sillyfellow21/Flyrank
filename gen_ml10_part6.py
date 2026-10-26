@@ -1,0 +1,30 @@
+cells.append(md(
+    "## 6. Effect sizes over drama\n",
+    "\n",
+    "Banned: drama without numbers. Required: effect size with base rates and n's. Below we rewrite each headline as an honest effect-size sentence.\n",
+))
+
+cells.append(code(
+    "# --- Effect sizes (with n's and base rates) ---",
+    "print(\"Effect sizes (this dataset, this period):\")",
+    "print()",
+    "print(\"  A. Rule baseline flags few pages but with high precision:\")",
+    "print(f\"    flagged = {n_flagged:,} of {N_TOTAL:,} ({n_flagged/N_TOTAL:.2%}); precision@50 = {baseline_pk[50]:.4f} vs base rate {BASE_RATE:.4f}\")",
+    "print(f\"    lift over base rate @50 = {baseline_pk[50]/BASE_RATE:.2f}x\")",
+    "print()",
+    "print(\"  B. Random Forest beats rule baseline @50:\")",
+    "print(f\"    RF {rf_p50:.4f} vs baseline {base_p50:.4f} vs base rate {BASE_RATE:.4f}\")",
+    "print(f\"    RF lift over base rate @50 = {rf_p50/BASE_RATE:.2f}x\")",
+    "print(f\"    RF vs baseline lift = {rf_p50/base_p50:.2f}x\")",
+    "print()",
+    "print(\"  C. Label-derived leakage confession:\")",
+    "print(f\"    precision@50 {p_honest:.4f} → {p_label:.4f} (Δ{p_label-p_honest:+.4f}, near-perfect = the model read the answer)\")",
+    "print()",
+    "print(\"  D. Grouped vs random split memorization gap (RF @50):\")",
+    "print(f\"    grouped {grouped_pk['random_forest'][50]:.4f} vs random {random_pk['random_forest'][50]:.4f}\")",
+    "print(f\"    gap = {random_pk['random_forest'][50]-grouped_pk['random_forest'][50]:+.4f} (random split faked skill)\")",
+    "print()",
+    "print(\"  E. Sealed holdout (client never seen):\")",
+    "print(f\"    n_sealed = {len(X_sealed)}  sealed base rate = {sealed_base_rate:.4f}\")",
+    "print(f\"    precision@50 = {sealed_pk[50]:.4f}\")",
+))
